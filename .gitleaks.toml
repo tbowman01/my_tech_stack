@@ -1,0 +1,21 @@
+title = "gitleaks config"
+
+[extend]
+useDefault = true
+
+[[rules]]
+description = "Generic API Key"
+id = "generic-api-key"
+regex = '''(?i)(api[_-]?key|apikey)['"]*\s*[:=]\s*['"][a-z0-9]{16,}['"]'''
+tags = ["key", "API"]
+
+[[rules]]
+description = "Generic Secret"
+id = "generic-secret"
+regex = '''(?i)(secret|password|passwd)['"]*\s*[:=]\s*['"][^'"\s]{8,}['"]'''
+tags = ["secret", "password"]
+
+[allowlist]
+description = "allowlisted files"
+files = ['''\.env\.example$''', '''README\.md$''']
+paths = ['''docs/''', '''examples/''']

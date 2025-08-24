@@ -1,0 +1,252 @@
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: api-gateway-ingress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: api-gateway
+  ingress:
+    - fromEntities:
+        - "world" # Allow ingress from LoadBalancer
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: envoy-gateway
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: api-gateway-egress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: api-gateway
+  egress:
+    # Allow access to users service
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: users
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/users"
+              - method: "POST" 
+                path: "/users"
+              - method: "GET"
+                path: "/healthz"
+
+    # Allow access to AI inference service
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: ai-inference
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                path: "/infer"
+              - method: "POST"
+                path: "/embed"
+              - method: "GET"
+                path: "/healthz"
+    
+    # Allow DNS
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+    
+    # Allow HTTPS for external services
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: users-service-ingress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: users
+  ingress:
+    # Allow access from API Gateway
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: api-gateway
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    
+    # Allow health checks from Kubernetes
+    - fromEntities:
+        - kube-apiserver
+        - cluster
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/healthz"
+              - method: "GET"
+                path: "/readyz"
+
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: users-service-egress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: users
+  egress:
+    # Allow access to PostgreSQL
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: postgres
+      toPorts:
+        - ports:
+            - port: "5432"
+              protocol: TCP
+    
+    # Allow access to OpenTelemetry collector
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: otel-collector
+      toPorts:
+        - ports:
+            - port: "4317"
+              protocol: TCP
+    
+    # Allow DNS
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: ai-inference-ingress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: ai-inference
+  ingress:
+    # Allow access from API Gateway
+    - fromEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: api-gateway
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+    
+    # Allow health checks from Kubernetes
+    - fromEntities:
+        - kube-apiserver
+        - cluster
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+          rules:
+            http:
+              - method: "GET"
+                path: "/healthz"
+              - method: "GET"
+                path: "/readyz"
+
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: ai-inference-egress
+  namespace: default
+spec:
+  endpointSelector:
+    matchLabels:
+      app.kubernetes.io/name: ai-inference
+  egress:
+    # Allow access to Qdrant (vector database)
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: qdrant
+      toPorts:
+        - ports:
+            - port: "6333"
+              protocol: TCP
+    
+    # Allow access to OpenTelemetry collector
+    - toEndpoints:
+        - matchLabels:
+            app.kubernetes.io/name: otel-collector
+      toPorts:
+        - ports:
+            - port: "4317"
+              protocol: TCP
+    
+    # Allow access to external AI APIs (OpenAI, Anthropic, etc.)
+    - toEntities:
+        - world
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP
+          rules:
+            http:
+              - method: "POST"
+                headers:
+                  - "Authorization"
+    
+    # Allow DNS
+    - toEntities:
+        - kube-apiserver
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+
+---
+apiVersion: "cilium.io/v2"
+kind: CiliumNetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: default
+spec:
+  endpointSelector: {}
+  # No ingress or egress rules = deny all by default

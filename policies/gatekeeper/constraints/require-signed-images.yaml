@@ -1,0 +1,24 @@
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredSignatures
+metadata:
+  name: require-signed-images
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]
+    excludedNamespaces: 
+      - "kube-system"
+      - "kube-public"
+      - "kube-node-lease"
+      - "gatekeeper-system"
+      - "cert-manager"
+      - "external-secrets"
+  parameters:
+    approvedRegistries:
+      - "ghcr.io/"
+      - "cgr.dev/chainguard/"
+      - "gcr.io/distroless/"
+    exemptNamespaces:
+      - "kube-system"
+      - "gatekeeper-system"

@@ -1,0 +1,16 @@
+apiVersion: v2
+name: svc-template
+description: A Helm chart for microservices in the enterprise AI platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - microservice
+  - kubernetes
+  - ai-platform
+home: https://github.com/your-org/enterprise-ai-platform
+sources:
+  - https://github.com/your-org/enterprise-ai-platform
+maintainers:
+  - name: Platform Team
+    email: platform@example.com

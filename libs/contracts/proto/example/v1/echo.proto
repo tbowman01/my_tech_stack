@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package example.v1;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "github.com/your-org/enterprise-ai-platform/libs/contracts/gen/go/example/v1;examplev1";
+
+// Echo service for testing gRPC connectivity
+service EchoService {
+  // Simple echo RPC
+  rpc Say(EchoRequest) returns (EchoReply) {}
+  
+  // Server streaming echo
+  rpc SayStream(EchoRequest) returns (stream EchoReply) {}
+  
+  // Bidirectional streaming echo
+  rpc SayBidi(stream EchoRequest) returns (stream EchoReply) {}
+}
+
+// Echo request message
+message EchoRequest {
+  // Message to echo
+  string message = 1;
+  
+  // Optional metadata
+  map<string, string> metadata = 2;
+}
+
+// Echo reply message
+message EchoReply {
+  // Echoed message
+  string message = 1;
+  
+  // Server timestamp
+  google.protobuf.Timestamp timestamp = 2;
+  
+  // Optional metadata
+  map<string, string> metadata = 3;
+}

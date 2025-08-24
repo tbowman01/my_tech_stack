@@ -1,0 +1,19 @@
+{
+  "extends": [
+    "config:recommended"
+  ],
+  "ignorePaths": [
+    "docs/**",
+    "backstage/**"
+  ],
+  "packageRules": [
+    {
+      "matchDatasources": ["docker"],
+      "addLabels": ["dependencies", "docker"]
+    },
+    {
+      "matchDatasources": ["helm"],
+      "addLabels": ["dependencies", "helm"]
+    }
+  ]
+}

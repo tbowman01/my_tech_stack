@@ -1,0 +1,80 @@
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredsignatures
+  annotations:
+    metadata.gatekeeper.sh/title: "Required Signatures"
+    metadata.gatekeeper.sh/version: 1.0.0
+    description: "Requires container images to be signed and from approved registries"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredSignatures
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            approvedRegistries:
+              type: array
+              items:
+                type: string
+              description: "List of approved container registries"
+            exemptNamespaces:
+              type: array
+              items:
+                type: string
+              description: "Namespaces exempt from this policy"
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredsignatures
+        
+        # Get approved registries from parameters, default to ghcr.io
+        approved_registries := input.parameters.approvedRegistries
+        default_registries := ["ghcr.io/", "cgr.dev/chainguard/", "gcr.io/distroless/"]
+        registries := array.concat(approved_registries, default_registries)
+        
+        # Get exempt namespaces
+        exempt_namespaces := input.parameters.exemptNamespaces
+        
+        # Check if current namespace is exempt
+        is_exempt_namespace {
+          input.review.object.metadata.namespace == exempt_namespaces[_]
+        }
+        
+        # Check if image is from approved registry
+        image_approved(image) {
+          startswith(image, registries[_])
+        }
+        
+        # Violation for unapproved images
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          not is_exempt_namespace
+          
+          # Check containers
+          container := input.review.object.spec.containers[_]
+          not image_approved(container.image)
+          msg := sprintf("Container image '%v' must be from an approved registry: %v", [container.image, registries])
+        }
+        
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod" 
+          not is_exempt_namespace
+          
+          # Check init containers
+          container := input.review.object.spec.initContainers[_]
+          not image_approved(container.image)
+          msg := sprintf("Init container image '%v' must be from an approved registry: %v", [container.image, registries])
+        }
+        
+        violation[{"msg": msg}] {
+          input.review.kind.kind == "Pod"
+          not is_exempt_namespace
+          
+          # Check ephemeral containers
+          container := input.review.object.spec.ephemeralContainers[_]
+          not image_approved(container.image)
+          msg := sprintf("Ephemeral container image '%v' must be from an approved registry: %v", [container.image, registries])
+        }

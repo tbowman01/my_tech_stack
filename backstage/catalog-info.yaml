@@ -1,0 +1,202 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: enterprise-ai-platform
+  description: Modern, secure, AI-driven enterprise platform
+  annotations:
+    github.com/project-slug: your-org/enterprise-ai-platform
+    backstage.io/kubernetes-id: enterprise-ai-platform
+    backstage.io/kubernetes-namespace: default
+    sonarqube.org/project-key: enterprise-ai-platform
+  tags:
+    - platform
+    - ai
+    - kubernetes
+    - microservices
+  links:
+    - url: https://enterprise-ai-platform.example.com
+      title: Production Environment
+      icon: web
+    - url: https://dev-enterprise-ai-platform.example.com  
+      title: Development Environment
+      icon: web
+    - url: https://grafana.example.com
+      title: Monitoring Dashboard
+      icon: dashboard
+spec:
+  type: service
+  lifecycle: experimental
+  owner: platform-team
+  system: enterprise-ai-platform
+  dependsOn:
+    - resource:default/kubernetes-cluster
+    - resource:default/postgresql-cluster
+    - resource:default/redis-cluster
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: api-gateway
+  description: Main API gateway for the enterprise AI platform
+  annotations:
+    github.com/project-slug: your-org/enterprise-ai-platform
+    backstage.io/kubernetes-id: api-gateway
+    backstage.io/kubernetes-namespace: default
+  tags:
+    - nodejs
+    - fastify
+    - api-gateway
+spec:
+  type: service
+  lifecycle: experimental
+  owner: backend-team
+  system: enterprise-ai-platform
+  providesApis:
+    - api-gateway-api
+  consumesApis:
+    - users-api
+    - ai-inference-api
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: users-service
+  description: User management microservice
+  annotations:
+    github.com/project-slug: your-org/enterprise-ai-platform
+    backstage.io/kubernetes-id: users
+    backstage.io/kubernetes-namespace: default
+  tags:
+    - rust
+    - axum
+    - microservice
+spec:
+  type: service
+  lifecycle: experimental
+  owner: backend-team
+  system: enterprise-ai-platform
+  providesApis:
+    - users-api
+  dependsOn:
+    - resource:default/postgresql-cluster
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: ai-inference-service
+  description: AI inference and embedding service
+  annotations:
+    github.com/project-slug: your-org/enterprise-ai-platform
+    backstage.io/kubernetes-id: ai-inference
+    backstage.io/kubernetes-namespace: default
+  tags:
+    - python
+    - fastapi
+    - ai
+    - machine-learning
+spec:
+  type: service
+  lifecycle: experimental
+  owner: ai-team
+  system: enterprise-ai-platform
+  providesApis:
+    - ai-inference-api
+  dependsOn:
+    - resource:default/qdrant-cluster
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: api-gateway-api
+  description: Main API Gateway REST API
+spec:
+  type: openapi
+  lifecycle: experimental
+  owner: backend-team
+  system: enterprise-ai-platform
+  definition:
+    $text: ../libs/contracts/openapi.yaml
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: users-api
+  description: Users service REST and gRPC API
+spec:
+  type: grpc
+  lifecycle: experimental
+  owner: backend-team
+  system: enterprise-ai-platform
+  definition:
+    $text: ../libs/contracts/proto/users/v1/users.proto
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: API
+metadata:
+  name: ai-inference-api
+  description: AI inference and embedding API
+spec:
+  type: openapi
+  lifecycle: experimental
+  owner: ai-team
+  system: enterprise-ai-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: kubernetes-cluster
+  description: Main Kubernetes cluster
+spec:
+  type: kubernetes-cluster
+  owner: platform-team
+  system: enterprise-ai-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: postgresql-cluster
+  description: PostgreSQL database cluster
+spec:
+  type: database
+  owner: platform-team
+  system: enterprise-ai-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: redis-cluster
+  description: Redis cache cluster
+spec:
+  type: cache
+  owner: platform-team
+  system: enterprise-ai-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: qdrant-cluster
+  description: Qdrant vector database
+spec:
+  type: database
+  owner: ai-team
+  system: enterprise-ai-platform
+
+---
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: enterprise-ai-platform
+  description: Complete enterprise AI platform system
+spec:
+  owner: platform-team
+  domain: platform

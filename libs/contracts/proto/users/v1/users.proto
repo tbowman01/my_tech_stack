@@ -1,0 +1,166 @@
+syntax = "proto3";
+
+package users.v1;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/your-org/enterprise-ai-platform/libs/contracts/gen/go/users/v1;usersv1";
+
+// Users service for user management
+service UsersService {
+  // List users with pagination
+  rpc ListUsers(ListUsersRequest) returns (ListUsersResponse) {}
+  
+  // Get user by ID
+  rpc GetUser(GetUserRequest) returns (User) {}
+  
+  // Create new user
+  rpc CreateUser(CreateUserRequest) returns (User) {}
+  
+  // Update existing user
+  rpc UpdateUser(UpdateUserRequest) returns (User) {}
+  
+  // Delete user
+  rpc DeleteUser(DeleteUserRequest) returns (google.protobuf.Empty) {}
+  
+  // Stream user events
+  rpc StreamUserEvents(StreamUserEventsRequest) returns (stream UserEvent) {}
+}
+
+// User model
+message User {
+  // Unique user identifier
+  string id = 1;
+  
+  // User's full name
+  string name = 2;
+  
+  // User's email address
+  string email = 3;
+  
+  // User's status
+  UserStatus status = 4;
+  
+  // When user was created
+  google.protobuf.Timestamp created_at = 5;
+  
+  // When user was last updated
+  google.protobuf.Timestamp updated_at = 6;
+  
+  // Optional metadata
+  map<string, string> metadata = 7;
+}
+
+// User status enumeration
+enum UserStatus {
+  USER_STATUS_UNSPECIFIED = 0;
+  USER_STATUS_ACTIVE = 1;
+  USER_STATUS_INACTIVE = 2;
+  USER_STATUS_SUSPENDED = 3;
+}
+
+// List users request
+message ListUsersRequest {
+  // Maximum number of users to return
+  int32 limit = 1;
+  
+  // Number of users to skip
+  int32 offset = 2;
+  
+  // Filter by status
+  UserStatus status_filter = 3;
+  
+  // Search query
+  string search = 4;
+}
+
+// List users response
+message ListUsersResponse {
+  // List of users
+  repeated User users = 1;
+  
+  // Total number of users (before pagination)
+  int32 total = 2;
+  
+  // Next page token (if applicable)
+  string next_page_token = 3;
+}
+
+// Get user request
+message GetUserRequest {
+  // User ID
+  string id = 1;
+}
+
+// Create user request
+message CreateUserRequest {
+  // User's name
+  string name = 1;
+  
+  // User's email
+  string email = 2;
+  
+  // Optional metadata
+  map<string, string> metadata = 3;
+}
+
+// Update user request
+message UpdateUserRequest {
+  // User ID
+  string id = 1;
+  
+  // User's name
+  optional string name = 2;
+  
+  // User's email
+  optional string email = 3;
+  
+  // User's status
+  optional UserStatus status = 4;
+  
+  // Optional metadata
+  map<string, string> metadata = 5;
+}
+
+// Delete user request
+message DeleteUserRequest {
+  // User ID
+  string id = 1;
+}
+
+// Stream user events request
+message StreamUserEventsRequest {
+  // Filter by user ID (optional)
+  optional string user_id = 1;
+  
+  // Filter by event types
+  repeated UserEventType event_types = 2;
+}
+
+// User event
+message UserEvent {
+  // Event ID
+  string id = 1;
+  
+  // User ID
+  string user_id = 2;
+  
+  // Event type
+  UserEventType type = 3;
+  
+  // Event timestamp
+  google.protobuf.Timestamp timestamp = 4;
+  
+  // Event data
+  map<string, string> data = 5;
+}
+
+// User event types
+enum UserEventType {
+  USER_EVENT_TYPE_UNSPECIFIED = 0;
+  USER_EVENT_TYPE_CREATED = 1;
+  USER_EVENT_TYPE_UPDATED = 2;
+  USER_EVENT_TYPE_DELETED = 3;
+  USER_EVENT_TYPE_STATUS_CHANGED = 4;
+}

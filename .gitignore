@@ -1,0 +1,57 @@
+# Dependencies
+node_modules/
+target/
+.venv/
+__pycache__/
+*.pyc
+
+# Build artifacts
+dist/
+build/
+.next/
+.docusaurus/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+
+# Secrets and keys
+*.key
+*.pem
+secrets/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+*.lcov
+
+# SBOM and security
+sbom.*
+*.sarif
+
+# Helm
+charts/*.tgz
+
+# Temporary files
+tmp/
+temp/
