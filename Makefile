@@ -115,12 +115,116 @@ fmt: ## Format code for all languages
 	@find . -name "Cargo.toml" -not -path "./target/*" -exec sh -c 'cd "$$(dirname "{}")" && cargo fmt || true' \;
 	@find . -name "requirements.txt" -not -path "./.venv/*" -exec sh -c 'cd "$$(dirname "{}")" && ruff format . || true' \;
 
+# =============================================================================
+# Docker Commands
+# =============================================================================
+
+.PHONY: docker-build
+docker-build: ## Build all Docker images locally
+	@echo "Building Docker images..."
+	docker-compose build --parallel
+
+.PHONY: docker-up
+docker-up: ## Start full production stack with Docker Compose
+	@echo "Starting full production stack..."
+	@if [ ! -f .env ]; then echo "Creating .env from .env.example..."; cp .env.example .env; fi
+	docker-compose up -d
+
+.PHONY: docker-down
+docker-down: ## Stop full production stack
+	@echo "Stopping full production stack..."
+	docker-compose down
+
+.PHONY: docker-logs
+docker-logs: ## View logs from all containers
+	docker-compose logs -f
+
+.PHONY: docker-clean
+docker-clean: ## Clean up Docker containers, volumes, and images
+	@echo "Cleaning up Docker resources..."
+	docker-compose down -v --remove-orphans
+	docker system prune -f
+	docker volume prune -f
+
 .PHONY: dev
-dev: ## Start development environment
+dev: ## Start lightweight development environment
 	@echo "Starting development environment..."
+	@if [ ! -f .env ]; then echo "Creating .env from .env.example..."; cp .env.example .env; fi
 	docker-compose -f docker-compose.dev.yml up -d
 
 .PHONY: dev-down
 dev-down: ## Stop development environment
 	@echo "Stopping development environment..."
 	docker-compose -f docker-compose.dev.yml down
+
+.PHONY: dev-logs
+dev-logs: ## View logs from development containers
+	docker-compose -f docker-compose.dev.yml logs -f
+
+.PHONY: dev-build
+dev-build: ## Build development Docker images
+	@echo "Building development images..."
+	docker-compose -f docker-compose.dev.yml build --parallel
+
+.PHONY: dev-clean
+dev-clean: ## Clean up development environment
+	@echo "Cleaning up development environment..."
+	docker-compose -f docker-compose.dev.yml down -v --remove-orphans
+
+.PHONY: docker-health
+docker-health: ## Check health of all running containers
+	@echo "Checking container health..."
+	@docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+.PHONY: docker-shell
+docker-shell: ## Open shell in a container (Usage: make docker-shell SERVICE=api-gateway)
+	@if [ -z "$(SERVICE)" ]; then echo "Usage: make docker-shell SERVICE=api-gateway"; exit 1; fi
+	docker-compose exec $(SERVICE) sh
+
+.PHONY: docker-reset-db
+docker-reset-db: ## Reset database with fresh data
+	@echo "Resetting database..."
+	docker-compose stop postgres
+	docker-compose rm -f postgres
+	docker volume rm $(shell docker-compose config --volumes | grep postgres) || true
+	docker-compose up -d postgres
+
+.PHONY: docker-backup-db
+docker-backup-db: ## Backup PostgreSQL database
+	@echo "Backing up database..."
+	@mkdir -p backups
+	docker-compose exec postgres pg_dump -U postgres enterprise_ai > backups/backup_$(shell date +%Y%m%d_%H%M%S).sql
+	@echo "Database backup created in backups/"
+
+.PHONY: docker-restore-db
+docker-restore-db: ## Restore PostgreSQL database (Usage: make docker-restore-db BACKUP=backup_file.sql)
+	@if [ -z "$(BACKUP)" ]; then echo "Usage: make docker-restore-db BACKUP=backup_file.sql"; exit 1; fi
+	@if [ ! -f "backups/$(BACKUP)" ]; then echo "Backup file not found: backups/$(BACKUP)"; exit 1; fi
+	docker-compose exec -T postgres psql -U postgres -d enterprise_ai < backups/$(BACKUP)
+
+# =============================================================================
+# Monitoring Commands
+# =============================================================================
+
+.PHONY: monitor-logs
+monitor-logs: ## Monitor application logs in real-time
+	@echo "Monitoring application logs..."
+	docker-compose logs -f api-gateway users ai-inference
+
+.PHONY: monitor-metrics
+monitor-metrics: ## Open Prometheus metrics dashboard
+	@echo "Opening Prometheus at http://localhost:9090"
+	@command -v open >/dev/null && open http://localhost:9090 || echo "Visit http://localhost:9090"
+
+.PHONY: monitor-traces
+monitor-traces: ## Open Jaeger tracing dashboard
+	@echo "Opening Jaeger at http://localhost:16686"
+	@command -v open >/dev/null && open http://localhost:16686 || echo "Visit http://localhost:16686"
+
+.PHONY: monitor-grafana
+monitor-grafana: ## Open Grafana dashboard
+	@echo "Opening Grafana at http://localhost:3000 (admin/admin)"
+	@command -v open >/dev/null && open http://localhost:3000 || echo "Visit http://localhost:3000"
+
+.PHONY: monitor-all
+monitor-all: monitor-metrics monitor-traces monitor-grafana ## Open all monitoring dashboards

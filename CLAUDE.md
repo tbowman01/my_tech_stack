@@ -42,6 +42,37 @@ make scan              # Security scans with Trivy/Grype
 make verify-admission  # Test OPA/Gatekeeper policies locally
 ```
 
+### Docker Development Commands
+```bash
+# Quick Development Setup (Lightweight)
+make dev               # Start development environment with hot reload
+make dev-down          # Stop development environment
+make dev-logs          # View development logs
+make dev-build         # Build development images
+make dev-clean         # Clean up development environment
+
+# Full Production Stack (Complete Infrastructure)
+make docker-up         # Start full production stack locally
+make docker-down       # Stop full production stack
+make docker-build      # Build all Docker images
+make docker-logs       # View all container logs
+make docker-clean      # Clean up all Docker resources
+make docker-health     # Check container health status
+
+# Database Operations
+make docker-reset-db   # Reset database with fresh sample data
+make docker-backup-db  # Backup PostgreSQL database
+make docker-restore-db BACKUP=file.sql # Restore database from backup
+
+# Monitoring & Debugging
+make monitor-logs      # Monitor application logs in real-time
+make monitor-metrics   # Open Prometheus dashboard (localhost:9090)
+make monitor-traces    # Open Jaeger tracing (localhost:16686)
+make monitor-grafana   # Open Grafana dashboard (localhost:3000)
+make monitor-all       # Open all monitoring dashboards
+make docker-shell SERVICE=api-gateway # Open shell in container
+```
+
 ### Language-Specific Commands
 ```bash
 # Node.js services (apps/api-gateway/, apps/web/)

@@ -1,0 +1,25 @@
+# Development Dockerfile for API Gateway with hot reload
+FROM cgr.dev/chainguard/node:latest-dev
+
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install dependencies including dev dependencies
+RUN npm ci
+
+# Copy source code
+COPY src ./src
+
+# Create non-root user directories
+RUN mkdir -p /tmp && chmod 1777 /tmp
+
+# Switch to non-root user
+USER 65532:65532
+
+# Expose port
+EXPOSE 8080
+
+# Start with nodemon for hot reload
+CMD ["npm", "run", "dev"]

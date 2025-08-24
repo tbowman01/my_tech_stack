@@ -1,0 +1,318 @@
+# Enterprise AI Platform - Production Docker Compose
+# For production-like local deployment with full stack
+version: '3.8'
+
+services:
+  # =============================================================================
+  # Infrastructure Services
+  # =============================================================================
+  
+  postgres:
+    image: postgres:15-alpine
+    container_name: eai_postgres
+    environment:
+      POSTGRES_DB: enterprise_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres_dev_password
+      POSTGRES_MULTIPLE_DATABASES: users,analytics
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-postgres.sh:/docker-entrypoint-initdb.d/init-postgres.sh:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eai_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: eai_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - eai_network
+
+  qdrant:
+    image: qdrant/qdrant:v1.7.4
+    container_name: eai_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__HTTP_PORT: 6333
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - eai_network
+
+  opensearch:
+    image: opensearchproject/opensearch:2.11.1
+    container_name: eai_opensearch
+    environment:
+      - discovery.type=single-node
+      - DISABLE_SECURITY_PLUGIN=true
+      - "OPENSEARCH_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+      - "9600:9600"
+    volumes:
+      - opensearch_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9200/_cluster/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - eai_network
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.12
+    container_name: eai_clickhouse
+    ports:
+      - "8123:8123"
+      - "9000:9000"
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    environment:
+      CLICKHOUSE_DB: analytics
+      CLICKHOUSE_USER: clickhouse
+      CLICKHOUSE_PASSWORD: clickhouse_dev_password
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - eai_network
+
+  # =============================================================================
+  # Observability Stack
+  # =============================================================================
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.91.0
+    container_name: eai_otel_collector
+    command: ["--config=/etc/otelcol-contrib/otel-collector.yaml"]
+    volumes:
+      - ./ops/otel/collector-docker.yaml:/etc/otelcol-contrib/otel-collector.yaml:ro
+    ports:
+      - "4317:4317"   # OTLP gRPC receiver
+      - "4318:4318"   # OTLP HTTP receiver
+      - "8889:8889"   # Prometheus metrics
+      - "13133:13133" # Health check
+    depends_on:
+      - prometheus
+      - jaeger
+      - loki
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:13133/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - eai_network
+
+  prometheus:
+    image: prom/prometheus:v2.48.1
+    container_name: eai_prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./ops/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - eai_network
+
+  grafana:
+    image: grafana/grafana:10.2.3
+    container_name: eai_grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./ops/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - ./ops/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+    depends_on:
+      - prometheus
+    networks:
+      - eai_network
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.52
+    container_name: eai_jaeger
+    ports:
+      - "16686:16686"
+      - "14250:14250"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+    networks:
+      - eai_network
+
+  loki:
+    image: grafana/loki:2.9.4
+    container_name: eai_loki
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./ops/monitoring/loki.yml:/etc/loki/local-config.yaml:ro
+      - loki_data:/loki
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - eai_network
+
+  # =============================================================================
+  # Application Services
+  # =============================================================================
+
+  api-gateway:
+    build:
+      context: ./apps/api-gateway
+      dockerfile: Dockerfile
+    container_name: eai_api_gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - LOG_LEVEL=info
+      - OTEL_SERVICE_NAME=api-gateway
+      - OTEL_SERVICE_VERSION=0.1.0
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - USERS_SERVICE_URL=http://users:8080
+      - AI_SERVICE_URL=http://ai-inference:8080
+    depends_on:
+      otel-collector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:8080/healthz').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - eai_network
+
+  users:
+    build:
+      context: ./services/users
+      dockerfile: Dockerfile
+    container_name: eai_users_service
+    ports:
+      - "8081:8080"
+    environment:
+      - RUST_LOG=info
+      - OTEL_SERVICE_NAME=users
+      - OTEL_SERVICE_VERSION=0.1.0
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - DATABASE_URL=postgresql://postgres:postgres_dev_password@postgres:5432/users
+    depends_on:
+      postgres:
+        condition: service_healthy
+      otel-collector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - eai_network
+
+  ai-inference:
+    build:
+      context: ./apps/ai/inference
+      dockerfile: Dockerfile
+    container_name: eai_ai_inference
+    ports:
+      - "8082:8080"
+    environment:
+      - PYTHON_ENV=development
+      - PORT=8080
+      - LOG_LEVEL=info
+      - OTEL_SERVICE_NAME=ai-inference
+      - OTEL_SERVICE_VERSION=0.1.0
+      - OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      otel-collector:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8080/healthz').raise_for_status()"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - eai_network
+
+  # =============================================================================
+  # Development Tools
+  # =============================================================================
+
+  nginx:
+    image: nginx:alpine
+    container_name: eai_nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./ops/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ops/nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api-gateway
+      - grafana
+    networks:
+      - eai_network
+
+  docs:
+    build:
+      context: ./docs
+      dockerfile: Dockerfile
+    container_name: eai_docs
+    ports:
+      - "3001:3000"
+    networks:
+      - eai_network
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  opensearch_data:
+  clickhouse_data:
+  prometheus_data:
+  grafana_data:
+  loki_data:
+
+networks:
+  eai_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
