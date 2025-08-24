@@ -5,7 +5,18 @@ const sidebars: SidebarsConfig = {
     'intro',
     {
       type: 'category',
-      label: 'Getting Started',
+      label: '🎮 Adventure Quests',
+      collapsed: false,
+      items: [
+        'quests/getting-started',
+        'quests/security-champion', 
+        'quests/ai-explorer',
+        'quests/devops-master',
+      ],
+    },
+    {
+      type: 'category',
+      label: '🚀 Getting Started',
       items: [
         'getting-started/prerequisites',
         'getting-started/local-development',

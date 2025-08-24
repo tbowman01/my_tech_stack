@@ -1,180 +1,332 @@
-# CLAUDE.md
+# Claude Code Configuration - SPARC Development Environment
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+## 🚨 CRITICAL: CONCURRENT EXECUTION & FILE MANAGEMENT
+
+**ABSOLUTE RULES**:
+1. ALL operations MUST be concurrent/parallel in a single message
+2. **NEVER save working files, text/mds and tests to the root folder**
+3. ALWAYS organize files in appropriate subdirectories
+4. **USE CLAUDE CODE'S TASK TOOL** for spawning agents concurrently, not just MCP
+
+### ⚡ GOLDEN RULE: "1 MESSAGE = ALL RELATED OPERATIONS"
+
+**MANDATORY PATTERNS:**
+- **TodoWrite**: ALWAYS batch ALL todos in ONE call (5-10+ todos minimum)
+- **Task tool (Claude Code)**: ALWAYS spawn ALL agents in ONE message with full instructions
+- **File operations**: ALWAYS batch ALL reads/writes/edits in ONE message
+- **Bash commands**: ALWAYS batch ALL terminal operations in ONE message
+- **Memory operations**: ALWAYS batch ALL memory store/retrieve in ONE message
+
+### 🎯 CRITICAL: Claude Code Task Tool for Agent Execution
+
+**Claude Code's Task tool is the PRIMARY way to spawn agents:**
+```javascript
+// ✅ CORRECT: Use Claude Code's Task tool for parallel agent execution
+[Single Message]:
+  Task("Research agent", "Analyze requirements and patterns...", "researcher")
+  Task("Coder agent", "Implement core features...", "coder")
+  Task("Tester agent", "Create comprehensive tests...", "tester")
+  Task("Reviewer agent", "Review code quality...", "reviewer")
+  Task("Architect agent", "Design system architecture...", "system-architect")
+```
+
+**MCP tools are ONLY for coordination setup:**
+- `mcp__claude-flow__swarm_init` - Initialize coordination topology
+- `mcp__claude-flow__agent_spawn` - Define agent types for coordination
+- `mcp__claude-flow__task_orchestrate` - Orchestrate high-level workflows
+
+### 📁 File Organization Rules
+
+**NEVER save to root folder. Use these directories:**
+- `/src` - Source code files
+- `/tests` - Test files
+- `/docs` - Documentation and markdown files
+- `/config` - Configuration files
+- `/scripts` - Utility scripts
+- `/examples` - Example code
 
 ## Project Overview
 
-This is an enterprise AI platform scaffold designed around modern cloud-native architecture. It's a comprehensive monorepo that implements a production-ready stack with Kubernetes, service mesh, AI/ML capabilities, and enterprise security patterns.
+This project uses SPARC (Specification, Pseudocode, Architecture, Refinement, Completion) methodology with Claude-Flow orchestration for systematic Test-Driven Development.
 
-## Architecture & Technology Stack
+## SPARC Commands
 
-### Core Infrastructure
-- **Orchestration**: Kubernetes with Cilium CNI & service mesh, Envoy Gateway (Gateway API)
-- **Security**: SPIRE (SPIFFE IDs), Vault + SOPS for secrets, Keycloak (OIDC), OPA/Gatekeeper policies
-- **Data Layer**: PostgreSQL + Redis + ClickHouse + Qdrant (vectors) + OpenSearch + S3-compatible storage
-- **Messaging**: NATS JetStream
-- **Observability**: OpenTelemetry → Prometheus/Loki/Tempo/Grafana stack
+### Core Commands
+- `npx claude-flow sparc modes` - List available modes
+- `npx claude-flow sparc run <mode> "<task>"` - Execute specific mode
+- `npx claude-flow sparc tdd "<feature>"` - Run complete TDD workflow
+- `npx claude-flow sparc info <mode>` - Get mode details
 
-### Application Services
-- **Languages**: Rust (Axum/Tonic), TypeScript/Node.js (Fastify), Python (FastAPI)
-- **Patterns**: Microservices, REST + gRPC, event-driven architecture
-- **AI/ML**: MLflow, Feast, RAG implementation, vLLM/Ollama integration
+### Batchtools Commands
+- `npx claude-flow sparc batch <modes> "<task>"` - Parallel execution
+- `npx claude-flow sparc pipeline "<task>"` - Full pipeline processing
+- `npx claude-flow sparc concurrent <mode> "<tasks-file>"` - Multi-task processing
 
-### Development & Operations
-- **IaC**: Terraform (cloud-agnostic), Helm charts, Kustomize overlays
-- **CI/CD**: GitHub Actions, Argo Rollouts + Flagger (progressive delivery)
-- **Documentation**: Docusaurus v2, Backstage IDP
-- **Supply Chain Security**: Syft (SBOM), Trivy/Grype scanning, Cosign keyless signing
+### Build Commands
+- `npm run build` - Build project
+- `npm run test` - Run tests
+- `npm run lint` - Linting
+- `npm run typecheck` - Type checking
 
-## Development Commands
+## SPARC Workflow Phases
 
-### Core Make Targets
+1. **Specification** - Requirements analysis (`sparc run spec-pseudocode`)
+2. **Pseudocode** - Algorithm design (`sparc run spec-pseudocode`)
+3. **Architecture** - System design (`sparc run architect`)
+4. **Refinement** - TDD implementation (`sparc tdd`)
+5. **Completion** - Integration (`sparc run integration`)
+
+## Code Style & Best Practices
+
+- **Modular Design**: Files under 500 lines
+- **Environment Safety**: Never hardcode secrets
+- **Test-First**: Write tests before implementation
+- **Clean Architecture**: Separate concerns
+- **Documentation**: Keep updated
+
+## 🚀 Available Agents (54 Total)
+
+### Core Development
+`coder`, `reviewer`, `tester`, `planner`, `researcher`
+
+### Swarm Coordination
+`hierarchical-coordinator`, `mesh-coordinator`, `adaptive-coordinator`, `collective-intelligence-coordinator`, `swarm-memory-manager`
+
+### Consensus & Distributed
+`byzantine-coordinator`, `raft-manager`, `gossip-coordinator`, `consensus-builder`, `crdt-synchronizer`, `quorum-manager`, `security-manager`
+
+### Performance & Optimization
+`perf-analyzer`, `performance-benchmarker`, `task-orchestrator`, `memory-coordinator`, `smart-agent`
+
+### GitHub & Repository
+`github-modes`, `pr-manager`, `code-review-swarm`, `issue-tracker`, `release-manager`, `workflow-automation`, `project-board-sync`, `repo-architect`, `multi-repo-swarm`
+
+### SPARC Methodology
+`sparc-coord`, `sparc-coder`, `specification`, `pseudocode`, `architecture`, `refinement`
+
+### Specialized Development
+`backend-dev`, `mobile-dev`, `ml-developer`, `cicd-engineer`, `api-docs`, `system-architect`, `code-analyzer`, `base-template-generator`
+
+### Testing & Validation
+`tdd-london-swarm`, `production-validator`
+
+### Migration & Planning
+`migration-planner`, `swarm-init`
+
+## 🎯 Claude Code vs MCP Tools
+
+### Claude Code Handles ALL EXECUTION:
+- **Task tool**: Spawn and run agents concurrently for actual work
+- File operations (Read, Write, Edit, MultiEdit, Glob, Grep)
+- Code generation and programming
+- Bash commands and system operations
+- Implementation work
+- Project navigation and analysis
+- TodoWrite and task management
+- Git operations
+- Package management
+- Testing and debugging
+
+### MCP Tools ONLY COORDINATE:
+- Swarm initialization (topology setup)
+- Agent type definitions (coordination patterns)
+- Task orchestration (high-level planning)
+- Memory management
+- Neural features
+- Performance tracking
+- GitHub integration
+
+**KEY**: MCP coordinates the strategy, Claude Code's Task tool executes with real agents.
+
+## 🚀 Quick Setup
+
 ```bash
-make init-dev          # Install git hooks, pre-commit, validate toolchain
-make deps              # Install dependencies for all languages (JS/Go/Rust/Python)
-make platform-apply    # Install/upgrade platform via Helm/Kustomize
-make vault-bootstrap   # Configure Vault (PKI/Transit/KV, policies, roles)
-make keycloak-bootstrap # Import Keycloak realm, clients, roles
-make deploy-dev        # Build images, sign with Cosign, deploy with progressive rollout
-make clean             # Remove build artifacts
-make sbom              # Generate SBOMs with Syft
-make scan              # Security scans with Trivy/Grype
-make verify-admission  # Test OPA/Gatekeeper policies locally
+# Add Claude Flow MCP server
+claude mcp add claude-flow npx claude-flow@alpha mcp start
 ```
 
-### Docker Development Commands
-```bash
-# Quick Development Setup (Lightweight)
-make dev               # Start development environment with hot reload
-make dev-down          # Stop development environment
-make dev-logs          # View development logs
-make dev-build         # Build development images
-make dev-clean         # Clean up development environment
+## MCP Tool Categories
 
-# Full Production Stack (Complete Infrastructure)
-make docker-up         # Start full production stack locally
-make docker-down       # Stop full production stack
-make docker-build      # Build all Docker images
-make docker-logs       # View all container logs
-make docker-clean      # Clean up all Docker resources
-make docker-health     # Check container health status
+### Coordination
+`swarm_init`, `agent_spawn`, `task_orchestrate`
 
-# Database Operations
-make docker-reset-db   # Reset database with fresh sample data
-make docker-backup-db  # Backup PostgreSQL database
-make docker-restore-db BACKUP=file.sql # Restore database from backup
+### Monitoring
+`swarm_status`, `agent_list`, `agent_metrics`, `task_status`, `task_results`
 
-# Monitoring & Debugging
-make monitor-logs      # Monitor application logs in real-time
-make monitor-metrics   # Open Prometheus dashboard (localhost:9090)
-make monitor-traces    # Open Jaeger tracing (localhost:16686)
-make monitor-grafana   # Open Grafana dashboard (localhost:3000)
-make monitor-all       # Open all monitoring dashboards
-make docker-shell SERVICE=api-gateway # Open shell in container
+### Memory & Neural
+`memory_usage`, `neural_status`, `neural_train`, `neural_patterns`
+
+### GitHub Integration
+`github_swarm`, `repo_analyze`, `pr_enhance`, `issue_triage`, `code_review`
+
+### System
+`benchmark_run`, `features_detect`, `swarm_monitor`
+
+## 🚀 Agent Execution Flow with Claude Code
+
+### The Correct Pattern:
+
+1. **Optional**: Use MCP tools to set up coordination topology
+2. **REQUIRED**: Use Claude Code's Task tool to spawn agents that do actual work
+3. **REQUIRED**: Each agent runs hooks for coordination
+4. **REQUIRED**: Batch all operations in single messages
+
+### Example Full-Stack Development:
+
+```javascript
+// Single message with all agent spawning via Claude Code's Task tool
+[Parallel Agent Execution]:
+  Task("Backend Developer", "Build REST API with Express. Use hooks for coordination.", "backend-dev")
+  Task("Frontend Developer", "Create React UI. Coordinate with backend via memory.", "coder")
+  Task("Database Architect", "Design PostgreSQL schema. Store schema in memory.", "code-analyzer")
+  Task("Test Engineer", "Write Jest tests. Check memory for API contracts.", "tester")
+  Task("DevOps Engineer", "Setup Docker and CI/CD. Document in memory.", "cicd-engineer")
+  Task("Security Auditor", "Review authentication. Report findings via hooks.", "reviewer")
+  
+  // All todos batched together
+  TodoWrite { todos: [...8-10 todos...] }
+  
+  // All file operations together
+  Write "backend/server.js"
+  Write "frontend/App.jsx"
+  Write "database/schema.sql"
 ```
 
-### Language-Specific Commands
+## 📋 Agent Coordination Protocol
+
+### Every Agent Spawned via Task Tool MUST:
+
+**1️⃣ BEFORE Work:**
 ```bash
-# Node.js services (apps/api-gateway/, apps/web/)
-npm ci && npm test
-npm run dev            # Development server with watch mode
-
-# Rust services (services/users/, apps/stream-ingest/)
-cargo test --all
-cargo build --release
-
-# Python AI services (apps/ai/inference/)
-pip install -r requirements.txt
-pytest
-uvicorn main:app --reload
+npx claude-flow@alpha hooks pre-task --description "[task]"
+npx claude-flow@alpha hooks session-restore --session-id "swarm-[id]"
 ```
 
-### Infrastructure Commands
+**2️⃣ DURING Work:**
 ```bash
-# Terraform
-cd infra/terraform/envs/dev && terraform init && terraform apply
-
-# Helm operations
-helm upgrade --install <service> infra/helm/charts/svc-template
-
-# Container operations
-docker build -t <service> .
-cosign sign --yes <image>  # Keyless signing
+npx claude-flow@alpha hooks post-edit --file "[file]" --memory-key "swarm/[agent]/[step]"
+npx claude-flow@alpha hooks notify --message "[what was done]"
 ```
 
-## Repository Structure
+**3️⃣ AFTER Work:**
+```bash
+npx claude-flow@alpha hooks post-task --task-id "[task]"
+npx claude-flow@alpha hooks session-end --export-metrics true
+```
 
-The monorepo follows a domain-driven structure:
+## 🎯 Concurrent Execution Examples
 
-- `apps/` - User-facing applications (web UI, API gateway, BFF, AI services)
-- `services/` - Business domain services (users, analytics)
-- `libs/` - Shared libraries and contracts (OpenAPI + protobuf definitions)
-- `infra/` - Infrastructure as Code (Terraform modules, Helm charts, Kustomize)
-- `policies/` - Security policies (Gatekeeper, Conftest, Kyverno)
-- `ops/` - Operational configurations (OpenTelemetry, NATS, Vault, Keycloak)
-- `docs/` - Documentation site (Docusaurus)
-- `backstage/` - Internal Developer Platform configuration
+### ✅ CORRECT WORKFLOW: MCP Coordinates, Claude Code Executes
 
-## Key Patterns & Conventions
+```javascript
+// Step 1: MCP tools set up coordination (optional, for complex tasks)
+[Single Message - Coordination Setup]:
+  mcp__claude-flow__swarm_init { topology: "mesh", maxAgents: 6 }
+  mcp__claude-flow__agent_spawn { type: "researcher" }
+  mcp__claude-flow__agent_spawn { type: "coder" }
+  mcp__claude-flow__agent_spawn { type: "tester" }
 
-### Service Architecture
-- Each service follows the same structure: Dockerfile (multi-stage with Chainguard/Distroless), Helm chart deployment, OpenTelemetry integration
-- All services expose `/healthz` endpoint and structured logging
-- gRPC services use buf for schema management and code generation
-- REST APIs follow OpenAPI 3.0 specifications in `libs/contracts/`
+// Step 2: Claude Code Task tool spawns ACTUAL agents that do the work
+[Single Message - Parallel Agent Execution]:
+  // Claude Code's Task tool spawns real agents concurrently
+  Task("Research agent", "Analyze API requirements and best practices. Check memory for prior decisions.", "researcher")
+  Task("Coder agent", "Implement REST endpoints with authentication. Coordinate via hooks.", "coder")
+  Task("Database agent", "Design and implement database schema. Store decisions in memory.", "code-analyzer")
+  Task("Tester agent", "Create comprehensive test suite with 90% coverage.", "tester")
+  Task("Reviewer agent", "Review code quality and security. Document findings.", "reviewer")
+  
+  // Batch ALL todos in ONE call
+  TodoWrite { todos: [
+    {id: "1", content: "Research API patterns", status: "in_progress", priority: "high"},
+    {id: "2", content: "Design database schema", status: "in_progress", priority: "high"},
+    {id: "3", content: "Implement authentication", status: "pending", priority: "high"},
+    {id: "4", content: "Build REST endpoints", status: "pending", priority: "high"},
+    {id: "5", content: "Write unit tests", status: "pending", priority: "medium"},
+    {id: "6", content: "Integration tests", status: "pending", priority: "medium"},
+    {id: "7", content: "API documentation", status: "pending", priority: "low"},
+    {id: "8", content: "Performance optimization", status: "pending", priority: "low"}
+  ]}
+  
+  // Parallel file operations
+  Bash "mkdir -p app/{src,tests,docs,config}"
+  Write "app/package.json"
+  Write "app/src/server.js"
+  Write "app/tests/server.test.js"
+  Write "app/docs/API.md"
+```
 
-### Security Patterns
-- Container images must be signed with Cosign (keyless OIDC)
-- Secrets managed through Vault + External Secrets Operator
-- mTLS enforced via SPIRE/SPIFFE identities
-- Network policies enforce L7 rules via Cilium
-- All deployments verified by Gatekeeper admission controllers
+### ❌ WRONG (Multiple Messages):
+```javascript
+Message 1: mcp__claude-flow__swarm_init
+Message 2: Task("agent 1")
+Message 3: TodoWrite { todos: [single todo] }
+Message 4: Write "file.js"
+// This breaks parallel coordination!
+```
 
-### Observability
-- All services instrument with OpenTelemetry (traces, metrics, logs)
-- Structured logging with correlation IDs
-- Prometheus metrics with SLO/SLI definitions
-- Grafana dashboards for service health and business metrics
+## Performance Benefits
 
-### Data & ML Patterns
-- Event sourcing via Debezium CDC → ClickHouse
-- Feature store managed by Feast
-- ML experiments tracked in MLflow
-- Vector similarity search via Qdrant
-- RAG pipelines with safety guardrails
+- **84.8% SWE-Bench solve rate**
+- **32.3% token reduction**
+- **2.8-4.4x speed improvement**
+- **27+ neural models**
 
-## Development Workflow
+## Hooks Integration
 
-1. **Setup**: Run `make init-dev` to configure pre-commit hooks and toolchain validation
-2. **Infrastructure**: Deploy platform with `make platform-apply` after Terraform provisioning
-3. **Services**: Use the Helm service template in `infra/helm/charts/svc-template/` for new services
-4. **Testing**: All services follow London-style TDD with contract testing between services
-5. **Deployment**: Progressive rollouts via Argo Rollouts with automatic rollback on failure
-6. **Security**: Automated SBOM generation, vulnerability scanning, and policy enforcement
+### Pre-Operation
+- Auto-assign agents by file type
+- Validate commands for safety
+- Prepare resources automatically
+- Optimize topology by complexity
+- Cache searches
 
-## CI/CD Pipeline
+### Post-Operation
+- Auto-format code
+- Train neural patterns
+- Update memory
+- Analyze performance
+- Track token usage
 
-The GitHub Actions workflow (`ci.yaml`) implements:
-- Multi-language matrix builds (Node.js, Go, Rust, Python)
-- Comprehensive security scanning (Trivy, Gitleaks, Grype)
-- Multi-arch container builds with BuildKit
-- Keyless image signing with Cosign + SLSA attestations
-- Progressive deployment to dev environment on main branch
+### Session Management
+- Generate summaries
+- Persist state
+- Track metrics
+- Restore context
+- Export workflows
 
-## Prerequisites
+## Advanced Features (v2.0.0)
 
-**Required Tools**: Docker, make, direnv, kubectl, helm, terraform, cosign, sops, age, buf, protoc, node LTS, go 1.22+, rust stable, python 3.11+
+- 🚀 Automatic Topology Selection
+- ⚡ Parallel Execution (2.8-4.4x speed)
+- 🧠 Neural Training
+- 📊 Bottleneck Analysis
+- 🤖 Smart Auto-Spawning
+- 🛡️ Self-Healing Workflows
+- 💾 Cross-Session Memory
+- 🔗 GitHub Integration
 
-**Optional**: Pre-commit for local validation, Tilt for local development orchestration
+## Integration Tips
 
-## Bootstrap Sequence
+1. Start with basic swarm init
+2. Scale agents gradually
+3. Use memory for context
+4. Monitor progress regularly
+5. Train patterns from success
+6. Enable hooks automation
+7. Use GitHub tools first
 
-The platform must be deployed in a specific order due to dependencies:
-1. Terraform (networking, compute, storage)
-2. Cilium (CNI + service mesh) → Envoy Gateway
-3. cert-manager → SPIRE (identity)
-4. External Secrets ↔ Vault (secrets management)
-5. Keycloak (authentication) → Data layer (Postgres, Redis, etc.)
-6. Observability stack → Application services
+## Support
 
-Use `make platform-apply` which orchestrates this sequence via helmfile/kustomize wrappers.
+- Documentation: https://github.com/ruvnet/claude-flow
+- Issues: https://github.com/ruvnet/claude-flow/issues
+
+---
+
+Remember: **Claude Flow coordinates, Claude Code creates!**
+
+# important-instruction-reminders
+Do what has been asked; nothing more, nothing less.
+NEVER create files unless they're absolutely necessary for achieving your goal.
+ALWAYS prefer editing an existing file to creating a new one.
+NEVER proactively create documentation files (*.md) or README files. Only create documentation files if explicitly requested by the User.
+Never save working files, text/mds and tests to the root folder.
