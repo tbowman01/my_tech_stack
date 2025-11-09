@@ -175,7 +175,7 @@ services:
       - eai_network
 
   loki:
-    image: grafana/loki:2.9.4
+    image: grafana/loki:2.9.17
     container_name: eai_loki
     ports:
       - "3100:3100"
