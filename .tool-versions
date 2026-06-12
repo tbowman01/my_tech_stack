@@ -3,5 +3,5 @@ golang 1.22.0
 rust stable
 python 3.11.0
 terraform 1.5.0
-kubectl 1.28.0
+kubectl 1.36.2
 helm 3.12.0
